@@ -1,0 +1,11 @@
+{
+    "cSpell.words": [
+        "Imager",
+        "uaccum"
+    ],
+    "files.associations": {
+        "*.logcat": "logcat",
+        "atomic": "cpp",
+        "type_traits": "cpp"
+    }
+}
