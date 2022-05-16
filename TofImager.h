@@ -20,7 +20,7 @@ class TofImager {
         static inline constexpr uint8 kTofImageSize = 8;
         static inline constexpr uint8 kTofResolution = kTofImageSize*kTofImageSize; 
 
-        static inline constexpr uint8 kTofFrequency = 40;
+        static inline constexpr uint8 kTofFrequency = 60;
 
         Esp esp;
         Display display;
@@ -46,14 +46,18 @@ class TofImager {
             constexpr int8 kBlockWidth  = kWidth  / kTofImageSize;
             constexpr int8 kBlockHeight = kHeight / kTofImageSize;
 
-            for(int16 y = 0; y < kHeight; ++y) {
-                int8 blockY = y / kBlockHeight;
-                
-                for(int16 x = 0; x < kWidth; ++x) {
-                    int8 blockX = x / kBlockWidth;
+            for(int16 blockY = 0; blockY < kTofImageSize; ++blockY) {
+
+                int16 y = blockY * kBlockHeight;                
+                int16 distanceYOffset = blockY*kTofImageSize;
+
+                for(int16 blockX = 0; blockX < kTofImageSize; ++blockX) {
+
+                    int16 x = blockX * kBlockWidth;
 
                     //Note: Tof sensor returns transpose of x so we use x's complement to display data in correct direction
-                    int16 distance = data.distance_mm[ blockY*kTofImageSize + ((kTofImageSize-1) - blockX)];
+                    int16 distanceXOffset = (kTofImageSize-1) - blockX;
+                    int16 distance = data.distance_mm[distanceYOffset + distanceXOffset];
 
                     // TODO: Make sure that this is power of 2 when we compute upper and lower bounds
                     // constexpr uint16 kMaxDistance = 4000;
@@ -61,9 +65,15 @@ class TofImager {
                     HeatMap::PercentT normalizedDistance = HeatMap::PercentT(distance, kMaxDistance-1);
 
                     Color color = HeatMap::InterpolateColor(1 - normalizedDistance, HeatMap::kMagmaColorMap);
+
+                    uint16 color16BE = color.RGB16BE();
                     
-                    // Color color = HeatMap::InterpolateColor(HeatMap::PercentT(y*kWidth + x, kHeight*kWidth), HeatMap::kMagmaColorMap);
-                    bitmap[y][x] = color.RGB16BE();
+                    // TODO: replace with memcpy
+                    for(int16 yOffset = 0; yOffset < kBlockHeight; ++yOffset) {
+                        for(int16 xOffset = 0; xOffset < kBlockWidth; ++xOffset) {
+                            bitmap[y + yOffset][x + xOffset] = color16BE;                        
+                        }
+                    }
                 }
             }
         }
@@ -188,7 +198,7 @@ class TofImager {
             float updateFps = float(FpsT(1)/timer.LapS<FpsT>());
 
             display.backBuffer.setCursor(0,0);
-            display.backBuffer.setTextColor(Color::kGreen.RGB16BE());
+            display.backBuffer.setTextColor(Color::kCyan.RGB16BE());
             display.backBuffer.printf(
                 "Sensor FPS: %0.3f\n" 
                 "Render FPS: %0.3f\n" 
