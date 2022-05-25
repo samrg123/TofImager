@@ -18,5 +18,9 @@
 #define IRAM_FUNC __attribute__((section( ".iram.text." __FILE__ "." DEFER_STRINGIZE(__LINE__) "." DEFER_STRINGIZE(__COUNTER__) )))
 
 #define USED __attribute__((used))
+#define SECTION(x) __attribute__((section(x)))
+
+#define INLINE   __attribute__((always_inline))
+#define NOINLINE __attribute__((no_inline))
 
 #define DEFINE_FUNC(name, decl) decl asm(#name); decl
