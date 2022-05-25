@@ -2,22 +2,7 @@
 
 #include "util.h"
 #include "FixedPoint.h"
-
-template<typename ColorT>
-struct ColorConstants {
-
-    static inline constexpr auto kMin = ColorT::StorageT::kMinValue;
-    static inline constexpr auto kMax = ColorT::StorageT::kMaxValue;
-
-    static inline constexpr ColorT kRed     = ColorT(kMax, kMin, kMin);
-    static inline constexpr ColorT kGreen   = ColorT(kMin, kMax, kMin);
-    static inline constexpr ColorT kBlue    = ColorT(kMin, kMin, kMax);
-    static inline constexpr ColorT kCyan    = ColorT(kMin, kMax, kMax);
-    static inline constexpr ColorT kYellow  = ColorT(kMax, kMax, kMin);
-    static inline constexpr ColorT kMagenta = ColorT(kMax, kMin, kMax);
-    static inline constexpr ColorT kBlack   = ColorT(kMin, kMin, kMin);
-    static inline constexpr ColorT kWhite   = ColorT(kMax, kMax, kMax);
-};
+#include "ColorConstants.h"
 
 struct Color : ColorConstants<Color> {
     
@@ -51,7 +36,21 @@ struct Color : ColorConstants<Color> {
                (gBits >>  3);
     };
 
-    constexpr Color(StorageT r = 0, StorageT g = 0, StorageT b = 0): r(r), g(g), b(b) {}
+    constexpr Color() = default; 
+
+    template<typename T = StorageT>
+    constexpr Color(T r_, T g_ = 0, T b_ = 0) {
+
+        if constexpr(std::is_integral<T>::value) {
+            r = StorageT(r_, 256);
+            g = StorageT(g_, 256);
+            b = StorageT(b_, 256);
+        } else {
+            r = r_;
+            g = g_;
+            b = b_;
+        }
+    }
 
     constexpr Color Inverse() const { return Color(1/r, 1/g, 1/b); }
 
