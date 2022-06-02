@@ -20,7 +20,11 @@ class TofImager {
         static inline constexpr uint8 kTofImageSize = 8;
         static inline constexpr uint8 kTofResolution = kTofImageSize*kTofImageSize; 
 
-        static inline constexpr uint8 kTofFrequency = 60;
+        static inline constexpr uint8 kTofFrequency = 60; //Note: Recommended Max is 15Hz
+        static inline constexpr uint8 kTofPacketSize = 32; // Note: Default i2c buffer is 128
+        static inline constexpr uint8 kTofSharpnerPercentage = 20;
+        static inline constexpr uint32 kTofI2CFrequency = 1000000;
+
 
         Esp esp;
         Display display;
@@ -37,42 +41,87 @@ class TofImager {
             display.printf(fmt, args...);
         }
 
+        template<int16 kDstHeight, int16 kDstWidth, int16 kSrcHeight, int16 kSrcWidth>
+        static void InterpolateBitmap(uint16 (&dst)[kDstHeight][kDstWidth], const uint16 (&src)[kSrcHeight][kSrcWidth]) {
+
+            // TODO: Optimize this to pass in raw color buffer so we don't perform extra conversions
+            
+            // TODO: make this vec2
+            accum32 kSrcIncrementX = accum32(kSrcWidth,  kDstWidth);
+            accum32 kSrcIncrementY = accum32(kSrcHeight, kDstHeight);
+        
+            accum32 fixedSrcY = 0;
+            for(int16 dstY = 0; dstY < kDstHeight; ++dstY) {
+
+                //TODO: make sure this optimizes away with constexpr 
+                int16 srcY1 = fixedSrcY.Integer();
+                int16 srcY2 = srcY1 < (kSrcHeight-1) ? (srcY1 + 1) : srcY1;
+
+                fixedSrcY+= kSrcIncrementY;                
+                accum32 fractionY = fixedSrcY - srcY1;
+
+                accum32 fixedSrcX = 0;
+                for(int16 dstX = 0; dstX < kDstWidth; ++dstX) {
+
+                    int16 srcX1 = fixedSrcX.Integer();
+                    int16 srcX2 = srcX1 < (kSrcWidth-1) ? (srcX1 + 1) : srcX1;
+
+                    fixedSrcX+= kSrcIncrementX;
+                    accum32 fractionX = fixedSrcX - srcX1;
+
+                    Color colorLerpX1 = Lerp(fractionX, Color::FromRGB16BE(src[srcY1][srcX1]), Color::FromRGB16BE(src[srcY1][srcX2])); 
+                    Color colorLerpX2 = Lerp(fractionX, Color::FromRGB16BE(src[srcY2][srcX1]), Color::FromRGB16BE(src[srcY2][srcX2])); 
+                    Color colorLerpXY = Lerp(fractionY, colorLerpX1, colorLerpX2);
+
+                    dst[dstY][dstX] = colorLerpXY.RGB16BE();
+                }
+            }
+        }
+
         template<int16 kHeight, int16 kWidth>
-        void RenderBitmap(const VL53L5CX_ResultsData& data, uint16 (&bitmap)[kHeight][kWidth]) {
+        static void RenderBitmap(const VL53L5CX_ResultsData& data, uint16 (&bitmap)[kHeight][kWidth]) {
 
-            //TODO: Get min/max values for data and normalize to that
-
-            // Note: in pixel/block
             constexpr int8 kBlockWidth  = kWidth  / kTofImageSize;
             constexpr int8 kBlockHeight = kHeight / kTofImageSize;
 
+            //TODO: Get min/max values for data and normalize to that
             for(int16 blockY = 0; blockY < kTofImageSize; ++blockY) {
 
-                int16 y = blockY * kBlockHeight;                
-                int16 distanceYOffset = blockY*kTofImageSize;
+                int16 y = blockY * kBlockHeight;
+                int16 dataYOffset = blockY * kTofImageSize;
 
                 for(int16 blockX = 0; blockX < kTofImageSize; ++blockX) {
 
                     int16 x = blockX * kBlockWidth;
 
                     //Note: Tof sensor returns transpose of x so we use x's complement to display data in correct direction
-                    int16 distanceXOffset = (kTofImageSize-1) - blockX;
-                    int16 distance = data.distance_mm[distanceYOffset + distanceXOffset];
+                    int16 dataXOffset = (kTofImageSize-1) - blockX;
+                    int16 dataOffset = dataYOffset + dataXOffset;
 
-                    // TODO: Make sure that this is power of 2 when we compute upper and lower bounds
-                    // constexpr uint16 kMaxDistance = 4000;
-                    constexpr uint16 kMaxDistance = 4097;
-                    HeatMap::PercentT normalizedDistance = HeatMap::PercentT(distance, kMaxDistance-1);
+                    Color color;
+                    if(data.nb_target_detected[dataOffset] == 0) {
 
-                    Color color = HeatMap::InterpolateColor(1 - normalizedDistance, HeatMap::kMagmaColorMap);
+                        color = Color::kBlack;
+
+                    } else {
+
+                        int16 distance = data.distance_mm[dataYOffset + dataXOffset];
+
+                        // TODO: Make sure that this is power of 2 when we compute upper and lower bounds
+                        // constexpr uint16 kMaxDistance = 4000;
+                        constexpr uint16 kMaxDistance = 4097;
+                        HeatMap::PercentT normalizedDistance = HeatMap::PercentT(distance, kMaxDistance-1);
+
+                        color = HeatMap::InterpolateColor(1 - normalizedDistance, HeatMap::kMagmaColorMap);
+                    }
 
                     uint16 color16BE = color.RGB16BE();
-                    
-                    // TODO: replace with memcpy
+
                     for(int16 yOffset = 0; yOffset < kBlockHeight; ++yOffset) {
-                        for(int16 xOffset = 0; xOffset < kBlockWidth; ++xOffset) {
-                            bitmap[y + yOffset][x + xOffset] = color16BE;                        
-                        }
+    
+                        // TODO: Make FastFill align bitmap to 32 bits and fill 2 pixels at a time via uint32
+                        uint16* column = bitmap[y + yOffset] + x;
+                        FastFill(column, column + kBlockWidth, color16BE);
                     }
                 }
             }
@@ -103,8 +152,7 @@ class TofImager {
             Serial.println(); // print a new line for first to sperate serial garbage from first output line
 
             Wire.begin(); //This resets to 100kHz I2C
-            // Wire.setClock(400000); //Sensor has max I2C freq of 400kHz 
-            Wire.setClock(1000000); //1MHz 
+            Wire.setClock(kTofI2CFrequency);
 
             Printf("Initializing tof sensor. This can take up to 10s. Please wait.\n");
 
@@ -128,9 +176,8 @@ class TofImager {
             pinMode(D6, INPUT_PULLUP);
             attachInterruptArg(digitalPinToInterrupt(D6), TofSensorInterrupt, this, FALLING);
 
-            // Note: Default i2c buffer is 128
-            tofSensor.setWireMaxPacketSize(32);
-        
+            tofSensor.setWireMaxPacketSize(kTofPacketSize);
+
             tofSensor.setResolution(kTofResolution);            
             int currentTofResolution;
             while((currentTofResolution = tofSensor.getResolution()) != kTofResolution) {
@@ -141,6 +188,10 @@ class TofImager {
             }
             display.Clear();
             Printf("Set Tof sensor resolution: %d\n", kTofResolution);
+
+            tofSensor.setSharpenerPercent(kTofSharpnerPercentage);
+
+            tofSensor.setTargetOrder(SF_VL53L5CX_TARGET_ORDER::STRONGEST);
 
             tofSensor.setRangingMode(SF_VL53L5CX_RANGING_MODE::CONTINUOUS);
             tofSensor.setRangingFrequency(kTofFrequency);
@@ -181,8 +232,13 @@ class TofImager {
             Timer renderTimer(micros64());
             if(updateResult == UPDATE_SUCCESS) {
             
-                RenderBitmap(tofSensorData, display.backBuffer.GetBuffer());
-            
+                static uint16 tofImage[kTofImageSize][kTofImageSize];
+
+                RenderBitmap(tofSensorData, tofImage);
+                // RenderBitmap(tofSensorData, display.backBuffer.GetBuffer());
+                
+                InterpolateBitmap(display.backBuffer.GetBuffer(), tofImage);                
+
             } else {
 
                 display.backBuffer.fillScreen(Color::kBlack.RGB16BE());
@@ -198,7 +254,7 @@ class TofImager {
             float updateFps = float(FpsT(1)/timer.LapS<FpsT>());
 
             display.backBuffer.setCursor(0,0);
-            display.backBuffer.setTextColor(Color::kCyan.RGB16BE());
+            display.backBuffer.setTextColor(Color::kDimGray.RGB16BE());
             display.backBuffer.printf(
                 "Sensor FPS: %0.3f\n" 
                 "Render FPS: %0.3f\n" 
