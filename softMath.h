@@ -3,12 +3,24 @@
 #include "types.h"
 #include "macros.h"
 
+template<typename T> constexpr auto Mul32(T a, T b) requires(std::is_integral<T>::value) { 
+    if constexpr(std::is_signed<T>::value) return int32(a) * int32(b);
+    else return uint32(a) * uint32(b);
+}
+
+template<typename T> constexpr auto Mul64(T a, T b) requires(std::is_integral<T>::value && sizeof(T) < 4) {
+    
+    auto result = Mul32(a, b);
+
+    if constexpr(std::is_signed<T>::value) return int64(result);
+    else return uint64(result);
+}
+
 DEFINE_FUNC(__muldi3,
     constexpr USED int64 Mul64(int64 a, int64 b) 
 ) {
 
     // TODO: Optimize this 
-
     uint16 a0 = a>>48;
     uint16 a1 = a>>32;
     uint16 a2 = a>>16;
@@ -21,12 +33,12 @@ DEFINE_FUNC(__muldi3,
 
     // Note: from the expansion of (a0<<48):(a1<<32):(a2<<16):(a3<<0) * (a0<<48):(a1<<32):(a2<<16):(a3<<0)
     //       we ignore the 2^96, 2^80, and 2^64 terms because we are only calculating lower 64 bits of multiplication
-    uint32 c0  = a3*b3;
-    uint64 c16 = uint64(a3*b2) + b3*a2;
-    uint64 c32 = uint64(a1*b3) + b1*a3 + a2*b2;
-    uint64 c48 = uint64(a0*b3) + b0*a3 + a1*b2 + b1*a2; 
+    uint32 c0  = Mul32(a3,b3);
+    uint64 c16 = uint64(Mul32(a3, b2)) + Mul32(b3, a2);
+    uint64 c32 = uint64(Mul32(a1, b3)) + Mul32(b1, a3) + Mul32(a2, b2);
+    uint64 c48 = uint64(Mul32(a0, b3)) + Mul32(b0, a3) + Mul32(a1, b2) + Mul32(b1, a2); 
 
-    return (int64(c48)<<48) + (int64(c32)<<32) + (int64(c16)<<16) + c0;
+    return (c48<<48) + (c32<<32) + (c16<<16) + c0;
 }
 
 //// 32-bit routines
