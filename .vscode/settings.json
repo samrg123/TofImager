@@ -1,7 +1,11 @@
 {
     "cSpell.words": [
         "Imager",
-        "uaccum"
+        "satfract",
+        "uaccum",
+        "ufract",
+        "usat",
+        "usatfract"
     ],
     "files.associations": {
         "*.logcat": "logcat",
