@@ -3,6 +3,8 @@
 #include "types.h"
 #include "macros.h"
 
+#include "metaProgramming.h"
+
 #include "mathUtil.h"
 #include "softMath.h"
 #include "FixedPoint.h"
@@ -257,5 +259,3 @@ auto CriticalSection(LambdaT lambda) {
     }
 } 
 
-template<typename DeferT, typename ValT>
-constexpr ValT Defer(ValT val) { return val; }

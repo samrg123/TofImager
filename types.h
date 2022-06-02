@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <type_traits>
+#include <stddef.h> //size_t
 
 using uint   = unsigned int;
 using uint8  = uint8_t;
