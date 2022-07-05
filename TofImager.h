@@ -20,9 +20,10 @@ class TofImager {
         static inline constexpr uint8 kTofImageSize = 8;
         static inline constexpr uint8 kTofResolution = kTofImageSize*kTofImageSize; 
 
-        static inline constexpr uint8 kTofFrequency = 60; //Note: Recommended Max is 15Hz
+        static inline constexpr uint8 kTofMaxSigma = 3;
+        static inline constexpr uint8 kTofFrequency = 30; //Note: Recommended Max is 15Hz
         static inline constexpr uint8 kTofPacketSize = 32; // Note: Default i2c buffer is 128
-        static inline constexpr uint8 kTofSharpnerPercentage = 20;
+        static inline constexpr uint8 kTofSharpnerPercentage = 0;
         static inline constexpr uint32 kTofI2CFrequency = 1000000;
 
 
@@ -84,6 +85,27 @@ class TofImager {
             constexpr int8 kBlockWidth  = kWidth  / kTofImageSize;
             constexpr int8 kBlockHeight = kHeight / kTofImageSize;
 
+            // Get min-max range
+            int16 min = 4097;
+            int16 max = 0;
+            for(int16 i = 0; i < kTofImageSize*kTofImageSize; ++i) {
+                
+                if(data.nb_target_detected[i] 
+                    && data.range_sigma_mm[i] <= kTofMaxSigma
+                ) {
+
+                    int16 distance = data.distance_mm[i]; 
+                    if(distance < min) {
+                        min = distance;
+                    }
+
+                    if(distance > max) {
+                        max = distance;
+                    }
+                }
+            }
+            int16 minMaxDelta = Max(1, max - min);
+
             //TODO: Get min/max values for data and normalize to that
             for(int16 blockY = 0; blockY < kTofImageSize; ++blockY) {
 
@@ -105,13 +127,10 @@ class TofImager {
 
                     } else {
 
-                        int16 distance = data.distance_mm[dataYOffset + dataXOffset];
+                        int16 distance = data.distance_mm[dataOffset];
 
-                        // TODO: Make sure that this is power of 2 when we compute upper and lower bounds
-                        // constexpr uint16 kMaxDistance = 4000;
-                        constexpr uint16 kMaxDistance = 4097;
-                        HeatMap::PercentT normalizedDistance = HeatMap::PercentT(distance, kMaxDistance-1);
-
+                        // Map distance to color
+                        HeatMap::PercentT normalizedDistance = Clamp(HeatMap::PercentT(distance - min, minMaxDelta), 0, 1);
                         color = HeatMap::InterpolateColor(1 - normalizedDistance, HeatMap::kMagmaColorMap);
                     }
 
@@ -231,13 +250,12 @@ class TofImager {
 
             Timer renderTimer(micros64());
             if(updateResult == UPDATE_SUCCESS) {
+
+                // RenderBitmap(tofSensorData, display.backBuffer.GetBuffer());
             
                 static uint16 tofImage[kTofImageSize][kTofImageSize];
-
                 RenderBitmap(tofSensorData, tofImage);
-                // RenderBitmap(tofSensorData, display.backBuffer.GetBuffer());
-                
-                InterpolateBitmap(display.backBuffer.GetBuffer(), tofImage);                
+                InterpolateBitmap(display.backBuffer.GetBuffer(), tofImage);
 
             } else {
 
