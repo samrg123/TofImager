@@ -59,10 +59,10 @@ class Display: public Adafruit_SSD1351 {
 
 			// TODO: Look at this on the scope and see what speed we're actually getting on the spi buss.
 			// NOTE: ESP8266 caps out at 80MHz HSPI
-			begin(35000000);
-			// begin(30000000);
-			// begin(20000000);
-			// begin(4545454); //Rated minimum spi speed ~4.5MHz
+			// begin(35000000);
+
+			// Note: 20MHz is max freq in datasheet and corresponds to ~76.3Hz
+			begin(20000000);
 
 			//Note: we need to wait 100ms after on command is sent to the display 
 			// at the end of begin() before we can send the display commands. Otherwise
