@@ -34,7 +34,7 @@ struct Real32 {
     template<typename T>
     constexpr explicit operator T() const { return Integer(); }
 
-    constexpr operator float()  const { return float(value); }
+    constexpr explicit operator float()  const { return float(value); }
     constexpr explicit operator double() const { return double(value); }
     
     constexpr bool operator<(Real32 v) const { return value < v.value; }
