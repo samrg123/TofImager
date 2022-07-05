@@ -7,36 +7,8 @@
 struct Color : ColorConstants<Color> {
     
     using StorageT = accum32;
-    
+
     StorageT r, g, b;
-
-    //Note: Returns color in [R][G][B] uint32 order ([B][G][R] memory order) 
-    constexpr uint16 RGB32() const { 
-
-        return (uint32(r.Fraction().bits >> (r.kFractionBits - 8)) << 16) |  
-               (uint32(g.Fraction().bits >> (g.kFractionBits - 8)) << 8 ) | 
-               (uint32(b.Fraction().bits >> (b.kFractionBits - 8)) << 0 );
-    };
-
-    // Note: Returns color in [RRRRR:GGG][GGG:BBBBB]) uint16 order ([GGG:BBBBB][RRRRR:GGG] memory order)
-    constexpr uint16 RGB16() const {
-
-        return (uint16(r.Fraction().bits >> (r.kFractionBits - 5)) << 11) |  
-               (uint16(g.Fraction().bits >> (g.kFractionBits - 6)) << 5 ) | 
-               (uint16(b.Fraction().bits >> (b.kFractionBits - 5)) << 0 );
-    };
-
-    // Note: Returns color in [RRRRR:GGG][GGG:BBBBB]) memory order ([GGG:BBBBB][RRRRR:GGG] uint16 order)
-    constexpr uint16 RGB16BE() const {
-
-        uint16 rBits = r.Fraction().bits >> (r.kFractionBits - 5); 
-        uint16 gBits = g.Fraction().bits >> (g.kFractionBits - 6); 
-        uint16 bBits = b.Fraction().bits >> (b.kFractionBits - 5); 
-        return (gBits << 13) |
-               (bBits <<  8) |
-               (rBits <<  3) |
-               (gBits >>  3);
-    };
 
     constexpr Color() = default; 
 
@@ -46,26 +18,6 @@ struct Color : ColorConstants<Color> {
 
     template<typename T = StorageT>
     constexpr Color(T r, T g, T b): r(r), g(g), b(b) {}
-
-    static constexpr Color FromRGB16(uint16 rgb16) {
-        uint8 r = rgb16 >> 11;
-        uint8 g = (rgb16 >> 5) & 0x3F;
-        uint8 b = rgb16 & 0x1F;
-
-        return Color(StorageT(r, 32), 
-                     StorageT(g, 64),
-                     StorageT(b, 32));
-    }
-
-    static constexpr Color FromRGB16BE(uint16 rgb16BE) {
-        uint8 r = (rgb16BE >> 3) & 0x1F;
-        uint8 g = ((rgb16BE & 0x7) << 3) | (rgb16BE >> 13);
-        uint8 b = (rgb16BE >> 8) & 0x1F;
-
-        return Color(StorageT(r, 32), 
-                     StorageT(g, 64),
-                     StorageT(b, 32));
-    }
 
     constexpr Color Inverse() const { return Color(1/r, 1/g, 1/b); }
 
@@ -95,3 +47,84 @@ struct Color : ColorConstants<Color> {
     template<typename T> friend constexpr Color operator*(T scalar, Color color) { return Color(scalar*color.r,  scalar*color.g,  scalar*color.b); }
     template<typename T> friend constexpr Color operator/(T scalar, Color color) { return Color(scalar/color.r,  scalar/color.g,  scalar/color.b); }
 };
+
+template<bool kBigEndian_, uint8 kABits_, uint8 kRBits_, uint8 kGBits_, uint8 kBBits_>
+struct ARGB {
+
+    static inline constexpr bool kBigEndian = kBigEndian_;
+
+    static inline constexpr uint8 kABits = kABits_; 
+    static inline constexpr uint8 kRBits = kRBits_; 
+    static inline constexpr uint8 kGBits = kGBits_; 
+    static inline constexpr uint8 kBBits = kBBits_; 
+    static inline constexpr uint8 kBits  = kABits + kRBits + kGBits + kBBits; 
+    
+    using AType = SpanningInteger<false, kABits>::type;
+    using RType = SpanningInteger<false, kRBits>::type;
+    using GType = SpanningInteger<false, kGBits>::type;
+    using BType = SpanningInteger<false, kBBits>::type;
+    using BitsT = SpanningInteger<false, kBits >::type;
+
+    static inline constexpr uint8 kAShiftLE = kRBits + kGBits + kBBits;
+    static inline constexpr uint8 kRShiftLE = kGBits + kBBits;
+    static inline constexpr uint8 kGShiftLE = kBBits;
+    static inline constexpr uint8 kBShiftLE = 0;
+
+    static inline constexpr AType kMaxA = ~((~AType(0)) << kABits);
+    static inline constexpr RType kMaxR = ~((~RType(0)) << kRBits);
+    static inline constexpr GType kMaxG = ~((~GType(0)) << kGBits);
+    static inline constexpr BType kMaxB = ~((~BType(0)) << kBBits);
+
+    static inline constexpr BitsT kAMaskLE = BitsT(kMaxA) << kAShiftLE;
+    static inline constexpr BitsT kRMaskLE = BitsT(kMaxR) << kRShiftLE;
+    static inline constexpr BitsT kGMaskLE = BitsT(kMaxG) << kGShiftLE;
+    static inline constexpr BitsT kBMaskLE = BitsT(kMaxB) << kBShiftLE;
+
+    BitsT bits;
+
+    constexpr operator BitsT() const { return bits; }
+
+    constexpr BitsT GetBitsLE() const { return kBigEndian ? ByteSwap(bits) : bits; }
+
+    constexpr void SetBitsLE(BitsT valueLE) { bits = kBigEndian ? ByteSwap(valueLE) : valueLE; }
+
+    constexpr auto A() const { return (GetBitsLE() & kAMaskLE) >> kAShiftLE; }
+    constexpr auto R() const { return (GetBitsLE() & kRMaskLE) >> kRShiftLE; }
+    constexpr auto G() const { return (GetBitsLE() & kGMaskLE) >> kGShiftLE; }
+    constexpr auto B() const { return (GetBitsLE() & kBMaskLE) >> kBShiftLE; }
+
+    constexpr ARGB() = default;
+    constexpr ARGB(BitsT bits): bits(bits) {}
+    
+    constexpr ARGB(Color color) {
+        SetBitsLE(
+            kAMaskLE |
+            (BitsT(color.r.Fraction().bits >> (color.r.kFractionBits - kRBits)) << kRShiftLE) | 
+            (BitsT(color.g.Fraction().bits >> (color.g.kFractionBits - kGBits)) << kGShiftLE) |
+            (BitsT(color.b.Fraction().bits >> (color.b.kFractionBits - kBBits)) << kBShiftLE)
+        ); 
+    }
+
+    constexpr ARGB(AType a, RType r, GType g, BType b) {
+        SetBitsLE(
+            ((BitsT(a) << kAShiftLE) & kAMaskLE) | 
+            ((BitsT(r) << kRShiftLE) & kRMaskLE) | 
+            ((BitsT(g) << kGShiftLE) & kGMaskLE) | 
+            ((BitsT(b) << kBShiftLE) & kBMaskLE)
+        );
+    }
+
+    constexpr operator Color() const { 
+        return Color(
+            Color::StorageT(R(), 1<<kRBits), 
+            Color::StorageT(G(), 1<<kGBits), 
+            Color::StorageT(B(), 1<<kBBits) 
+        ); 
+    }
+};
+
+using RGB16   = ARGB<false, 0, 5, 6, 5>;
+using RGB16BE = ARGB<true,  0, 5, 6, 5>;
+
+using RGB24   = ARGB<false, 0, 8, 8, 8>;
+using RGB24BE = ARGB<true,  0, 8, 8, 8>;

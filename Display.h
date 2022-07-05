@@ -34,12 +34,16 @@ class Display: public Adafruit_SSD1351 {
 			
 			BackBuffer(): GFXcanvas16(kWidth, kHeight) {}
 
-			using Buffer = uint16_t[kHeight][kWidth];
+			using Buffer   = RGB16	[kHeight][kWidth];
+			using BufferBE = RGB16BE[kHeight][kWidth];
 
 			Buffer& GetBuffer() {
 				return *reinterpret_cast<Buffer*>(getBuffer());
 			}
 
+			BufferBE& GetBufferBE() {
+				return *reinterpret_cast<BufferBE*>(getBuffer());
+			}
 		};
 
 		BackBuffer backBuffer;
@@ -70,12 +74,12 @@ class Display: public Adafruit_SSD1351 {
 			delay(100);
 
 			//clear out garbage screen content
-			fillScreen(Color::kBlack.RGB16());
+			fillScreen(RGB16(Color::kBlack));
 			enableDisplay(true);
 		}
 
 		inline void Clear() {
-			fillScreen(Color::kBlack.RGB16());
+			fillScreen(RGB16(Color::kBlack));
 			setCursor(0, 0);
 		}
 

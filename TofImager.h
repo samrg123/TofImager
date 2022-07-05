@@ -42,11 +42,12 @@ class TofImager {
             display.printf(fmt, args...);
         }
 
-        template<int16 kDstHeight, int16 kDstWidth, int16 kSrcHeight, int16 kSrcWidth>
-        static void InterpolateBitmap(uint16 (&dst)[kDstHeight][kDstWidth], const uint16 (&src)[kSrcHeight][kSrcWidth]) {
+        template<
+            typename DstT, int16 kDstHeight, int16 kDstWidth,
+            typename SrcT, int16 kSrcHeight, int16 kSrcWidth
+        >
+        static void InterpolateBitmap(DstT (&dst)[kDstHeight][kDstWidth], const SrcT (&src)[kSrcHeight][kSrcWidth]) {
 
-            // TODO: Optimize this to pass in raw color buffer so we don't perform extra conversions
-            
             // TODO: make this vec2
             accum32 kSrcIncrementX = accum32(kSrcWidth,  kDstWidth);
             accum32 kSrcIncrementY = accum32(kSrcHeight, kDstHeight);
@@ -70,17 +71,17 @@ class TofImager {
                     fixedSrcX+= kSrcIncrementX;
                     accum32 fractionX = fixedSrcX - srcX1;
 
-                    Color colorLerpX1 = Lerp(fractionX, Color::FromRGB16BE(src[srcY1][srcX1]), Color::FromRGB16BE(src[srcY1][srcX2])); 
-                    Color colorLerpX2 = Lerp(fractionX, Color::FromRGB16BE(src[srcY2][srcX1]), Color::FromRGB16BE(src[srcY2][srcX2])); 
+                    Color colorLerpX1 = Lerp(fractionX, Color(src[srcY1][srcX1]), Color(src[srcY1][srcX2])); 
+                    Color colorLerpX2 = Lerp(fractionX, Color(src[srcY2][srcX1]), Color(src[srcY2][srcX2])); 
                     Color colorLerpXY = Lerp(fractionY, colorLerpX1, colorLerpX2);
 
-                    dst[dstY][dstX] = colorLerpXY.RGB16BE();
+                    dst[dstY][dstX] = colorLerpXY;
                 }
             }
         }
 
-        template<int16 kHeight, int16 kWidth>
-        static void RenderBitmap(const VL53L5CX_ResultsData& data, uint16 (&bitmap)[kHeight][kWidth]) {
+        template<typename BufferT, int16 kHeight, int16 kWidth>
+        static void RenderBitmap(const VL53L5CX_ResultsData& data, BufferT (&bitmap)[kHeight][kWidth]) {
 
             constexpr int8 kBlockWidth  = kWidth  / kTofImageSize;
             constexpr int8 kBlockHeight = kHeight / kTofImageSize;
@@ -134,13 +135,13 @@ class TofImager {
                         color = HeatMap::InterpolateColor(1 - normalizedDistance, HeatMap::kMagmaColorMap);
                     }
 
-                    uint16 color16BE = color.RGB16BE();
-
+                    // copy color to buffer
+                    BufferT bufferValue = color;
                     for(int16 yOffset = 0; yOffset < kBlockHeight; ++yOffset) {
     
                         // TODO: Make FastFill align bitmap to 32 bits and fill 2 pixels at a time via uint32
-                        uint16* column = bitmap[y + yOffset] + x;
-                        FastFill(column, column + kBlockWidth, color16BE);
+                        BufferT* column = bitmap[y + yOffset] + x;
+                        FastFill(column, column + kBlockWidth, bufferValue);
                     }
                 }
             }
@@ -251,16 +252,16 @@ class TofImager {
             Timer renderTimer(micros64());
             if(updateResult == UPDATE_SUCCESS) {
 
-                // RenderBitmap(tofSensorData, display.backBuffer.GetBuffer());
+                // RenderBitmap(tofSensorData, display.backBuffer.GetBufferBE());
             
-                static uint16 tofImage[kTofImageSize][kTofImageSize];
+                static Color tofImage[kTofImageSize][kTofImageSize];
                 RenderBitmap(tofSensorData, tofImage);
-                InterpolateBitmap(display.backBuffer.GetBuffer(), tofImage);
+                InterpolateBitmap(display.backBuffer.GetBufferBE(), tofImage);
 
             } else {
 
-                display.backBuffer.fillScreen(Color::kBlack.RGB16BE());
-                display.backBuffer.setTextColor(Color::kRed.RGB16BE());
+                display.backBuffer.fillScreen(RGB16BE(Color::kBlack));
+                display.backBuffer.setTextColor(RGB16BE(Color::kRed));
                 display.backBuffer.print("Failed to update tof data");
             }
 
@@ -272,7 +273,7 @@ class TofImager {
             float updateFps = float(FpsT(1)/timer.LapS<FpsT>());
 
             display.backBuffer.setCursor(0,0);
-            display.backBuffer.setTextColor(Color::kDimGray.RGB16BE());
+            display.backBuffer.setTextColor(RGB16BE(Color::kDimGray));
             display.backBuffer.printf(
                 "Sensor FPS: %0.3f\n" 
                 "Render FPS: %0.3f\n" 
@@ -295,7 +296,7 @@ class TofImager {
             // float fps = 1./elapsedSeconds;
 
             // display.backBuffer.setCursor(0,0);
-            // display.backBuffer.setTextColor(Color::kWhite.RGB16BE());
+            // display.backBuffer.setTextColor(RGB16BE(Color::kWhite));
             // display.backBuffer.printf("FPS: %0.3f", fps);
 
             // display.Draw();
