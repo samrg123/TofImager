@@ -4,10 +4,13 @@
 #include "FixedPoint.h"
 #include "ColorConstants.h"
 
-struct Color : ColorConstants<Color> {
+struct alignas(4) Color: ColorConstants<Color> {
     
-    using StorageT = accum32;
+    using StorageT = accum16;
 
+    // TODO: right now 16 bits are used as padding to align struct to 64 bit boundary.
+    //       use that space to add an alpha channel
+    // Note: Make sure we don't incur a penalty when doing math on opaque colors 
     StorageT r, g, b;
 
     constexpr Color() = default; 
@@ -97,12 +100,25 @@ struct ARGB {
     constexpr ARGB(BitsT bits): bits(bits) {}
     
     constexpr ARGB(Color color) {
+ 
+        auto rFract = color.r.Fraction().bits; 
+        auto gFract = color.g.Fraction().bits; 
+        auto bFract = color.b.Fraction().bits; 
+
+        constexpr int rShift = int(kRBits) - color.r.kFractionBits;
+        constexpr int gShift = int(kGBits) - color.g.kFractionBits;
+        constexpr int bShift = int(kBBits) - color.b.kFractionBits;
+
+        BitsT r = (rShift > 0) ? BitsT(rFract) << rShift : BitsT(rFract >> -rShift);
+        BitsT g = (gShift > 0) ? BitsT(gFract) << gShift : BitsT(gFract >> -gShift);
+        BitsT b = (bShift > 0) ? BitsT(bFract) << bShift : BitsT(bFract >> -bShift);
+
         SetBitsLE(
             kAMaskLE |
-            (BitsT(color.r.Fraction().bits >> (color.r.kFractionBits - kRBits)) << kRShiftLE) | 
-            (BitsT(color.g.Fraction().bits >> (color.g.kFractionBits - kGBits)) << kGShiftLE) |
-            (BitsT(color.b.Fraction().bits >> (color.b.kFractionBits - kBBits)) << kBShiftLE)
-        ); 
+            (r << kRShiftLE) | 
+            (g << kGShiftLE) |
+            (b << kBShiftLE)
+        );
     }
 
     constexpr ARGB(AType a, RType r, GType g, BType b) {
