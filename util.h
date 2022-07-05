@@ -213,7 +213,7 @@ inline constexpr void FastMemset(T* dst, uint8 val, uint32 bytes) {
 }
 
 template<typename T>
-constexpr T BigEndian(T val) {
+constexpr T ByteSwap(T val) {
 
     constexpr size_t kSize = sizeof(T);
 
@@ -224,6 +224,9 @@ constexpr T BigEndian(T val) {
     else if constexpr(kSize == 16) return __builtin_bswap128(val);   
     else static_assert(kSize != kSize, "Unsupported Type");
 }
+
+template<typename T>
+constexpr T BigEndian(T val) { return ByteSwap(val); }
 
 template<typename T>
 constexpr T LittleEndian(T val) { return val; }
