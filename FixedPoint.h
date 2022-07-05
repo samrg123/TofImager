@@ -47,7 +47,6 @@ struct FixedPoint {
     template<typename T>
     static inline constexpr auto ToBits(T n) {
 
-
         if constexpr(std::is_integral<T>::value) {
 
             using ResultT = SpanningInteger<std::is_signed<T>::value, Min(64u, 8*sizeof(T) + kFractionBits)>::type;
