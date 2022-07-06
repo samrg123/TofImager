@@ -11,6 +11,10 @@ class Display: public Adafruit_SSD1351 {
 	static inline constexpr uint8 kWidth  = SSD1351WIDTH; 
 	static inline constexpr uint8 kHeight = SSD1351HEIGHT; 
 
+	// NOTE: ESP8266 caps out at 80MHz HSPI
+	// Note: 20MHz is max freq in datasheet and corresponds to ~76.3Hz
+	static inline constexpr int kSpiFrequency = 20000000;
+
 	static inline constexpr uint8_t kSCL  = D5;
 	static inline constexpr uint8_t kSDA  = D7; 
 	static inline constexpr uint8_t kRES  = D3;
@@ -28,7 +32,7 @@ class Display: public Adafruit_SSD1351 {
 			   pin == D4;
 	}
 
-	public:  
+	public:
 	
 		struct BackBuffer: GFXcanvas16 {
 			
@@ -61,12 +65,7 @@ class Display: public Adafruit_SSD1351 {
 
 		inline void Init() {
 
-			// TODO: Look at this on the scope and see what speed we're actually getting on the spi buss.
-			// NOTE: ESP8266 caps out at 80MHz HSPI
-			// begin(35000000);
-
-			// Note: 20MHz is max freq in datasheet and corresponds to ~76.3Hz
-			begin(20000000);
+			begin(kSpiFrequency);
 
 			//Note: we need to wait 100ms after on command is sent to the display 
 			// at the end of begin() before we can send the display commands. Otherwise
@@ -87,6 +86,8 @@ class Display: public Adafruit_SSD1351 {
 			COLOR_ORDER_RGB = 0b01'110100,
 			COLOR_ORDER_BGR = 0b01'110000,
 		};
+
+		inline uint16 GetTextColor() const { return textcolor; }
 
 		inline void SetColorOrder(ColorOrder colorOrder) {
 			uint8 commandData = colorOrder;
