@@ -46,6 +46,15 @@ class Esp: public EspClass {
             }
         }
 
+        // TODO: Pull out hardcoded addresses into RegisterMap class
+        static inline void DisableHwWatchDog() {
+            *((volatile uint32_t*) 0x60000900)&= ~1;
+        }
+
+        static inline void EnableHwWatchDog() {
+            *((volatile uint32_t*) 0x60000900)|= 1;
+        }
+
         static void PrintDetails() {
 
             Serial.printf(
