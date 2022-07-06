@@ -3,6 +3,8 @@
 #include "types.h"
 #include <cmath>
 
+#include "softMath.h"
+
 template<typename T1, typename T2>
 constexpr auto Max(T1 a, T2 b) {
     return a >= b ? a : b;

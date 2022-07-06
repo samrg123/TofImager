@@ -1,6 +1,6 @@
 #pragma once
 
-#include "util.h"
+#include "memUtil.h"
 #include "FixedPoint.h"
 #include "ColorConstants.h"
 
