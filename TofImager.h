@@ -21,11 +21,10 @@ class TofImager {
         static inline constexpr uint8 kTofResolution = kTofImageSize*kTofImageSize; 
 
         static inline constexpr uint8 kTofMaxSigma = 3;
-        static inline constexpr uint8 kTofFrequency = 30; //Note: Recommended Max is 15Hz
+        static inline constexpr uint8 kTofFrequency = 60; //Note: Recommended Max is 15Hz
         static inline constexpr uint8 kTofPacketSize = 32; // Note: Default i2c buffer is 128
         static inline constexpr uint8 kTofSharpnerPercentage = 0;
         static inline constexpr uint32 kTofI2CFrequency = 1000000;
-
 
         Esp esp;
         Display display;
@@ -49,27 +48,27 @@ class TofImager {
         static void InterpolateBitmap(DstT (&dst)[kDstHeight][kDstWidth], const SrcT (&src)[kSrcHeight][kSrcWidth]) {
 
             // TODO: make this vec2
-            accum32 kSrcIncrementX = accum32(kSrcWidth,  kDstWidth);
-            accum32 kSrcIncrementY = accum32(kSrcHeight, kDstHeight);
+            constexpr accum16 kSrcIncrementX = accum16(kSrcWidth,  kDstWidth);
+            constexpr accum16 kSrcIncrementY = accum16(kSrcHeight, kDstHeight);
         
-            accum32 fixedSrcY = 0;
+            accum16 fixedSrcY = 0;
             for(int16 dstY = 0; dstY < kDstHeight; ++dstY) {
 
                 //TODO: make sure this optimizes away with constexpr 
-                int16 srcY1 = fixedSrcY.Integer();
-                int16 srcY2 = srcY1 < (kSrcHeight-1) ? (srcY1 + 1) : srcY1;
+                int srcY1 = fixedSrcY.Integer();
+                int srcY2 = srcY1 < (kSrcHeight-1) ? (srcY1 + 1) : srcY1;
 
                 fixedSrcY+= kSrcIncrementY;                
-                accum32 fractionY = fixedSrcY - srcY1;
+                accum16 fractionY = fixedSrcY - srcY1;
 
-                accum32 fixedSrcX = 0;
+                accum16 fixedSrcX = 0;
                 for(int16 dstX = 0; dstX < kDstWidth; ++dstX) {
 
-                    int16 srcX1 = fixedSrcX.Integer();
-                    int16 srcX2 = srcX1 < (kSrcWidth-1) ? (srcX1 + 1) : srcX1;
+                    int srcX1 = fixedSrcX.Integer();
+                    int srcX2 = srcX1 < (kSrcWidth-1) ? (srcX1 + 1) : srcX1;
 
                     fixedSrcX+= kSrcIncrementX;
-                    accum32 fractionX = fixedSrcX - srcX1;
+                    accum16 fractionX = fixedSrcX - srcX1;
 
                     Color colorLerpX1 = Lerp(fractionX, Color(src[srcY1][srcX1]), Color(src[srcY1][srcX2])); 
                     Color colorLerpX2 = Lerp(fractionX, Color(src[srcY2][srcX1]), Color(src[srcY2][srcX2])); 
@@ -149,9 +148,9 @@ class TofImager {
 
         static IRAM_FUNC void TofSensorInterrupt(void* tofImager_) {
 
+            uint64 currentTime = micros64();
             TofImager* tofImager = static_cast<TofImager*>(tofImager_);
 
-            uint64 currentTime = micros64();
             tofImager->deltaTofSensorDataTime = currentTime - tofImager->tofSensorDataTime;
             tofImager->tofSensorDataTime = currentTime;
         }
