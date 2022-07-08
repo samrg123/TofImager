@@ -13,7 +13,7 @@ class TofSensor {
         
         static inline constexpr uint8 kLidarImageSize = 8;
         static inline constexpr uint8 kLidarResolution = kLidarImageSize*kLidarImageSize;
-        static inline constexpr uint8 kLidarImageMaxSigma = 3;
+        static inline constexpr uint8 kLidarImageMaxSigma = 5;
 
         static inline constexpr uint8 kLidarFrequency = 60; //Note: Recommended Max is 15Hz
         static inline constexpr uint8 kLidarPacketSize = 32; // Note: Default i2c buffer is 128
@@ -146,7 +146,7 @@ class TofSensor {
                 lidar.setResolution(kLidarResolution);
             }
 
-            Log("Set lidar resolution: %d\n", kLidarResolution);
+            Log("Set lidar resolution: %d", kLidarResolution);
 
             lidar.setSharpenerPercent(kLidarSharpnerPercentage);
 
@@ -155,7 +155,7 @@ class TofSensor {
             lidar.setRangingMode(SF_VL53L5CX_RANGING_MODE::CONTINUOUS);
             lidar.setRangingFrequency(kLidarFrequency);
             lidar.startRanging();
-            Log("Started lidar ranging\n");
+            Log("Started lidar ranging");
 
             pinMode(kLidarInterruptPin, INPUT_PULLUP);
             attachInterruptArg(digitalPinToInterrupt(kLidarInterruptPin), LidarInterrupt, this, FALLING);
