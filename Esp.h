@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Esp.h>
-#include <SoftwareSerial.h>
+#include "log.h"
 
 #include <user_interface.h>
 
@@ -57,7 +57,7 @@ class Esp: public EspClass {
 
         static void PrintDetails() {
 
-            Serial.printf(
+            Log(
                 "ESP Status: {\n"
                 "\tChip ID: %d\n"  
                 "\tVcc: %f V\n"

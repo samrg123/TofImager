@@ -70,7 +70,7 @@ class WifiServer: public WiFiServer {
 
         // TODO: replace all PrintStatus functions with more generic 'ToString' 
         void PrintStatus() {
-            Serial.printf(
+            Log(
                 "WifiServer Status {\n"
                 "\tIP: %s\n"
                 "\tTCP Port: %d\n"
