@@ -24,3 +24,8 @@
 #define NOINLINE __attribute__((no_inline))
 
 #define DEFINE_FUNC(name, decl) decl asm(#name); decl
+
+// Warn: Crt uses constructors 0-100 to initialize itself, so `priority` should most likely be > 100
+#define CONSTRUCTOR(priority) __attribute__((constructor(priority)))
+#define PRE_CRT_CONSTRUCTOR   CONSTRUCTOR(0)
+#define POST_CRT_CONSTRUCTOR  CONSTRUCTOR(101)
