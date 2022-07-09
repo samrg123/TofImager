@@ -10,6 +10,11 @@
     "files.associations": {
         "*.logcat": "logcat",
         "atomic": "cpp",
-        "type_traits": "cpp"
+        "type_traits": "cpp",
+        "esp-dhcpserver.c": "cpp",
+        "gdbstub-cfg.h": "c",
+        "gdb_hooks.h": "c",
+        "stddef.h": "c",
+        "cstdio": "cpp"
     }
 }

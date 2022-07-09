@@ -9,6 +9,6 @@
     "arduino.clearOutputOnBuild": true,
 
     "buildPreferences": [
-        ["build.extra_flags", "-O3 -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"]
+        ["build.extra_flags", "-O3 -DDEBUG -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"]
     ]
 }
