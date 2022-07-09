@@ -6,7 +6,9 @@
     "intelliSenseGen": "enable",
     "port": "COM9",
     
+    "arduino.clearOutputOnBuild": true,
+
     "buildPreferences": [
-        ["compiler.cpp.extra_flags", "-O3 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"]
+        ["build.extra_flags", "-O3 -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"]
     ]
 }
