@@ -1,0 +1,65 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "command": "${command:arduino.verify}",
+
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true,
+                "group": "ESP8266",
+                "revealProblems": "always"
+            },
+
+            "problemMatcher": "$gcc"
+        },
+
+        {
+            "label": "Build and Run",
+            "command": "${command:arduino.upload}",
+
+            "group": "build",
+            
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true,
+                "group": "ESP8266",
+                "revealProblems": "always"
+            },
+
+            "problemMatcher": "$gcc"
+        },
+
+        {
+            "label": "Send SIGINT",
+            "type": "shell",
+        
+            "command": "${workspaceFolder}/.vscode/sendSigInt.ps1",        
+            "args": ["COM9", "11520"],
+            
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": true,
+                "group": "ESP8266",
+                "revealProblems": "always"
+            },
+
+            "problemMatcher": [{
+                "pattern": {
+                    "regexp": "Error (.*)",
+                    "message": 1
+                }
+            }],
+        },
+
+    ]
+}
