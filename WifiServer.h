@@ -12,17 +12,32 @@ class WifiServer: public WiFiServer {
 
     public:
 
-        static inline constexpr uint8 kMaxBacklog     = 5; //number of connections queued up
-        static inline constexpr uint8 kMaxConnections = 5; //number of connections managed by server
+        static inline constexpr uint8 kMaxBacklog     = 4; //number of connections queued up
+        static inline constexpr uint8 kMaxConnections = 2; //number of connections managed by server
+
+        static inline constexpr uint32 kDisconnectedConnectionId = 0;
+
+    public:
 
         struct Connection {
 
             struct OnReadArgs;
             using OnReadCallback = void(*)(OnReadArgs& args);
-    
-            WiFiClient client;
-            ChainedCallback<OnReadCallback> onRead;  
-            std::vector<uint8> buffer;
+
+            private:
+                friend class WifiServer;
+                uint32 id = kDisconnectedConnectionId;
+
+                Connection() {}
+                Connection(WiFiClient client) : client(client) {}
+
+            public:
+
+                WiFiClient client;
+                ChainedCallback<OnReadCallback> onRead;  
+                std::vector<uint8> buffer;
+
+                uint32 Id() { return id; }
         };
 
         struct Connection::OnReadArgs {
@@ -40,6 +55,32 @@ class WifiServer: public WiFiServer {
         
         Connection connections[kMaxConnections];
         uint8 connectedClientCount = 0;
+
+        uint32 currentConnectionId = kDisconnectedConnectionId;
+        uint32 getConnectionId() {
+            
+            // TODO: runtime on this algorithm is trash in worst case, but should be
+            //       O(1) in practice... replace this with algorithm which is fast in worst case too
+            for(uint32 id = currentConnectionId+1; id != currentConnectionId; ++id) {
+
+                if(UNLIKELY(id == kDisconnectedConnectionId)) continue;
+
+                bool idInUse = false;
+                for(const Connection& connection : connections) {
+                    if(id == connection.id) {
+                        idInUse = true;
+                        break;
+                    }
+                }
+
+                if(LIKELY(!idInUse)) {
+                    currentConnectionId = id;
+                    return id;
+                }
+            }
+
+            return kDisconnectedConnectionId;
+        }
 
     public:
 
@@ -83,7 +124,7 @@ class WifiServer: public WiFiServer {
                 _addr.toString().c_str(),
                 _port,
                 TcpStateString(TcpState()),
-                connectedClientCount,kMaxConnections,
+                connectedClientCount, kMaxConnections,
                 hasClient() ? "True" : "False",
                 kMaxBacklog
             );
@@ -114,45 +155,54 @@ class WifiServer: public WiFiServer {
             for(Connection& connection : connections) {
 
                 if(!connection.client) {
-            
-                    // Log("ClientStatus: %d | remoteIp: %d:%d | localIp: %d:%d",
-                    //     connection.client.status(),
-                    //     connection.client.remoteIP(), connection.client.remotePort(),                            
-                    //     connection.client.localIP(), connection.client.localPort()                            
-                    // );                      
-
-                    // TODO: THIS DOESN'T WORK!!! available always returns a connection 
-                    if(connection.client.remoteIP().isSet()) {
+        
+                    // Disconnect old client
+                    if(connection.id != kDisconnectedConnectionId) {
                         --connectedClientCount;
                         onDisconnect(*this, connection);
+                        connection.id = kDisconnectedConnectionId;
                     }
 
-                    //Try to establish a new connection
-                    connection = Connection {
-                        .client = available()
-                    };
+                    //Check for new connection
+                    // Note: quick out check for when `available()` yields 1ms when there is no `_unclaimed` 
+                    //       connection to to connect to 
+                    if(!_unclaimed) continue;
                     
-                    //Invoke onConnect callback
-                    // Note: we don't call client.connected just in case connection is still in the 
-                    //       initial stages where connected() would return false. Instead we call
-                    //       onConnect as soon as connection is initiated
-                    if(connection.client.status() != CLOSED) {
-                        ++connectedClientCount;
-                        onConnect(*this, connection);
-                    
-                    } else {
+                    connection = Connection(available());
 
-                        // No available client
+                    // Note: we don't use `client.connected()` just in case connection is still in the 
+                    //       initial stages where connected() would return false.
+                    if(connection.client.status() == CLOSED) {
+
+                        // No available client, move on
+                        Warn("_unclaimed client was closed, why?");
                         continue;
-                    } 
-                }
+                    }
+
+                    // Get client id
+                    connection.id = getConnectionId();
+                    if(UNLIKELY(connection.id == kDisconnectedConnectionId)) {
+
+                        Warn("Failed to get connection Id ... disconnecting remoteIp: %s:%d | localIp: %s:%d | ClientStatus: %d",
+                            connection.client.remoteIP().toString().c_str(), connection.client.remotePort(),                            
+                            connection.client.localIP().toString().c_str(), connection.client.localPort(),                                         
+                            connection.client.status()
+                        );
+
+                        // Note: abort doesn't wait for TCP ACK from client like stop does... just cuts them off and frees up heap memory
+                        connection.client.abort();
+                        continue;
+                    }
+
+                    //Invoke onConnect callback
+                    ++connectedClientCount;
+                    onConnect(*this, connection);
+                 }
 
                 //check for data
                 size_t availableBytes = connection.client.peekAvailable();
-                if(!availableBytes) {
-                    continue;
-                }
-
+                if(!availableBytes) continue;
+            
                 //allocate the new buffer
                 size_t oldBufferSize = connection.buffer.size();
                 size_t newBufferBytes = oldBufferSize + availableBytes;
