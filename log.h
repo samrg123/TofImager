@@ -2,12 +2,12 @@
 
 #include "debug.h"
 #include "Color.h"
+#include "Display.h"
 
 constexpr bool kLogToGdb = kEnableDebugging;
 constexpr bool kLogToSerial = !kLogToGdb;
-constexpr uint kLogBufferBytes = 1024;
+constexpr uint kLogBufferBytes = 256;
 
-class Display;
 Display* gLogDisplay = nullptr;
 
 enum LogType {
@@ -15,10 +15,11 @@ enum LogType {
 };
 
 // TODO: Make this logging more comprehensive and also log to the screen/over the network
+// TODO: PLACE IN WRAPPER CLASS!
+static char logBuffer[kLogBufferBytes] = {};
+
 template<typename... ArgsT>
 inline void LogEx(LogType type, const char* fmt, ArgsT... args) {
-
-    static char logBuffer[kLogBufferBytes] = {};
 
     int logLen = snprintf(nullptr, 0, fmt, args...);
     char* logStr = (logLen < kLogBufferBytes) ? logBuffer : new char[logLen+1];
