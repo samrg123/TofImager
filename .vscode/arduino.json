@@ -5,10 +5,19 @@
     "output": "build",
     "intelliSenseGen": "enable",
     "port": "COM9",
-    
     "arduino.clearOutputOnBuild": true,
-
     "buildPreferences": [
-        ["build.extra_flags", "-O3 -DDEBUG -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"]
+        [
+            "ORIGINAL.build.extra_flags",
+            "-O3 -DDEBUG -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"
+        ],
+        [
+            "DISABLED.build.extra_flags",
+            "-std=c++20 -Os -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"
+        ],
+        [
+            "build.extra_flags",
+            "-std=c++20 -Wall -Og -DDEBUG_ESP_WIFI -DDEBUG -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"
+        ]
     ]
 }

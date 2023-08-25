@@ -10,7 +10,7 @@
             //      make Build and Run preform a quick verify before commiting to all that
             //      and enable this prelauch task. For now just make sure the current
             //      firmware is on the to the ESP8266 before attaching debugger
-            // "preLaunchTask": "Build and Run",
+            "preLaunchTask": "Build and Run",
 
             "name": "GDB - Debug ESP8266",
             "type": "cppdbg",
@@ -18,7 +18,7 @@
             "program": "${workspaceFolder}/build/TofImager.ino.elf",
             "cwd": "${workspaceFolder}/build",
             "MIMode": "gdb",
-            "miDebuggerPath": "${env:LOCALAPPDATA}/Arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/3.0.4-gcc10.3-1757bed/bin/xtensa-lx106-elf-gdb.exe",
+            "miDebuggerPath": "${env:LOCALAPPDATA}/Arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/3.1.0-gcc10.3-e5f9fec/bin/xtensa-lx106-elf-gdb.exe",
             
             // Presentation options in Run and Debug drop-down
             "presentation": {
