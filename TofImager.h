@@ -4,6 +4,7 @@
 #include "Wifi.h"
 #include "Display.h"
 #include "TofSensor.h"
+#include "TofImagerServer.h"
 
 #include "util.h"
 #include "Timer.h"
@@ -13,22 +14,24 @@ class TofImager {
 
     public:
 
-        static inline constexpr int kBaudRate = 115200;
+        static inline constexpr int kSerialBaudRate = 115200;
 
     private:
 
         Esp esp;
         Display display;
         TofSensor tofSensor;
+        TofImagerServer server;
 
-    public: 
+    static inline void InitSerial() {
+        Serial.begin(kSerialBaudRate);
+        while(!Serial) {}
+        Serial.println(); // print a new line for first to sperate serial garbage from first output line
+    }
 
-        void InitSerial() {
-            Log("Connecting UART\n");
-            Serial.begin(kBaudRate);
-            while(!Serial) {}
-            Serial.println(); // print a new line for first to sperate serial garbage from first output line
-        }
+    public:
+
+        inline TofImager(): server(*this) {}
 
         void Init() {
 
@@ -36,18 +39,26 @@ class TofImager {
             // Note: LED is active low
             pinMode(LED_BUILTIN, OUTPUT);
             digitalWrite(LED_BUILTIN, LOW);
+
+            InitSerial();
+            Log("Initialized Serial Port");
             
             display.Init();
             gLogDisplay = &display;
-            
-            InitSerial();
+            Log("Initialized Display");
 
             tofSensor.Init();
 
-            // TODO: Init Server
+            server.Init();
         }
 
         void Update() {
+
+            // static uint16 color = 0;
+            // display.backBuffer.fillScreen(RGB16BE(color++));
+
+           // Process server commands 
+            server.Update();
 
             static Timer timer;
             static TofSensor::Data tofSensorData;
@@ -57,7 +68,6 @@ class TofImager {
             static uint64 drawDeltaTime = 0;
 
             TofSensor::UpdateResult updateResult = tofSensor.Update(tofSensorData);
-
             if(updateResult == TofSensor::UPDATE_NONE) return;
 
             uint64 deltaTofSensorDataTime = tofSensorData.timestamp - lastTofSensorTimestamp;
@@ -66,7 +76,7 @@ class TofImager {
             Timer renderTimer(micros64());
             if(updateResult == TofSensor::UPDATE_SUCCESS) {
 
-                // RenderBitmap(tofSensorData, display.backBuffer.GetBufferBE());
+                // tofSensorData.RenderBitmap(display.backBuffer.GetBufferBE());
             
                 static Color tofImage[tofSensor.kLidarImageSize][tofSensor.kLidarImageSize];
                 tofSensorData.RenderBitmap(tofImage);

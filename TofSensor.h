@@ -164,7 +164,8 @@ class TofSensor {
 
         UpdateResult Update(Data& data) {
 
-            return CriticalSection([&](){
+            // TODO: Critical section causes crash on server connection?
+            // return CriticalSection([&](){
 
                 if(lidarTimestamp == data.timestamp) {
                     return UPDATE_NONE;
@@ -176,6 +177,6 @@ class TofSensor {
                 }
 
                 return UPDATE_ERROR;
-            });
+            // });
         }
 };
