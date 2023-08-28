@@ -39,7 +39,7 @@ class ServerConnection:
 
             c = ""
             responseStr = ""
-            while c != "\n":
+            while c not in ["\0", "\n"]:
                 responseStr+= c
                 
                 try:

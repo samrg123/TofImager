@@ -202,9 +202,9 @@ void TofImagerServer::HelpCallback(TofImagerServer::Command command) {
             }
             
             if(helpString.isEmpty()) {
-                result = result + "\nInvalid Command: '" + arg + '\'';  
+                result = result + "Invalid Command: '" + arg + "'\n";  
             } else {
-                result = result + '\n' + helpString;
+                result = result + helpString + '\n';
                 helpString.clear();                         
             }
         }
