@@ -13,7 +13,7 @@
                 "-mtext-section-literals",
                 "-fno-rtti",
                 "-falign-functions=4",
-                "-std=gnu++17"
+                "-std=c++20"
             ],
             "intelliSenseMode": "gcc-x64",
             "includePath": [
@@ -41,7 +41,7 @@
                 "C:\\Users\\Sam\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\3.1.2\\cores\\esp8266\\Arduino.h"
             ],
             "cStandard": "c11",
-            "cppStandard": "c++17",
+            "cppStandard": "c++20",
             "defines": [
                 "__ets__",
                 "ICACHE_FLASH",
