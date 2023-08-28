@@ -7,17 +7,19 @@
     "port": "COM9",
     "arduino.clearOutputOnBuild": true,
     "buildPreferences": [
+        ["compiler.cpp.extra_flags", "-std=c++20"],
+
         [
             "ORIGINAL.build.extra_flags",
             "-O3 -DDEBUG -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"
         ],
         [
             "DISABLED.build.extra_flags",
-            "-std=c++20 -Os -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"
+            "-Os -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"
         ],
         [
             "build.extra_flags",
-            "-std=c++20 -Wall -Og -DDEBUG_ESP_WIFI -DDEBUG -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"
+            "-Wall -Og -DDEBUG_ESP_WIFI -DDEBUG -DESP8266 -ffast-math -save-temps=obj -fverbose-asm -Xlinker --gc-sections"
         ]
     ]
 }

@@ -22,7 +22,7 @@ struct Banner {
         }
 
         //build middle of banner
-        for(int i = 0; i < kHeaderLen; ++i) {
+        for(size_t i = 0; i < kHeaderLen; ++i) {
             bufferPos[i] = header[i];
         }
         bufferPos+= kHeaderLen;

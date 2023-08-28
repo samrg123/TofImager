@@ -59,8 +59,7 @@ struct TofImagerServer: ExtendedWifiCommandServer {
             .detailedHelp = "In loving memory of Shay 2008-2021.",
             .callback = [](Command command) {
                 
-                TofImager& tofImager = Server(command).tofImager;
-
+                // TofImager& tofImager = Server(command).tofImager;
                 // tofImager.sensorStream.Remove(SensorStream::UpdateDisplay);
                 // Display& display = wifly.display;
                 // display.backBuffer.drawRGBBitmap(0, 0, Woof::kBuffer, Woof::kWidth, Woof::kHeight);
@@ -118,7 +117,7 @@ struct TofImagerServer: ExtendedWifiCommandServer {
 
 void TofImagerServer::HelpCallback(TofImagerServer::Command command) {
 
-    // TODO: pull these funtions out into a text formatter that will automatically
+    // TODO: pull these functions out into a text formatter that will automatically
     //       adjust indenting and wrap text to banner width
 
     auto indentNewlines = [](const char* str) {

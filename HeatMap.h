@@ -277,14 +277,12 @@ struct HeatMap {
 
         index1 = Max(0, index1);
 
-        int16 index2 = index1+1;
-
         Color c1 = colorMap[index1];
         return c1;
 
         // TODO: experiment with packing two colors with fract16 color into single 32 bit memory access and lerping result
-
         // Note: This is very expensive and doesn't yield much difference on display
+        // int16 index2 = index1+1;
         // Color c2 = colorMap[index2];
         // return Lerp(value, c1, c2);
     }

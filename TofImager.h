@@ -26,7 +26,7 @@ class TofImager {
     static inline void InitSerial() {
         Serial.begin(kSerialBaudRate);
         while(!Serial) {}
-        Serial.println(); // print a new line for first to sperate serial garbage from first output line
+        Serial.println(); // print a new line for first to separate serial garbage from first output line
     }
 
     public:

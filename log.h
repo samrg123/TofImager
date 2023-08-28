@@ -14,6 +14,10 @@ enum LogType {
     LOG_MSG, LOG_WARN, LOG_ERROR
 };
 
+#define Log(msg, fmt...)   LogEx(LOG_MSG, "MSG - " msg "\n",##fmt)
+#define Warn(msg, fmt...)  LogEx(LOG_WARN, "WARN - " msg "\n",##fmt)
+#define Error(msg, fmt...) LogEx(LOG_ERROR, "ERROR - " msg "\n",##fmt)
+
 // TODO: Make this logging more comprehensive and also log to the screen/over the network
 // TODO: PLACE IN WRAPPER CLASS!
 static char logBuffer[kLogBufferBytes] = {};
@@ -21,7 +25,16 @@ static char logBuffer[kLogBufferBytes] = {};
 template<typename... ArgsT>
 inline void LogEx(LogType type, const char* fmt, ArgsT... args) {
 
-    int logLen = snprintf(nullptr, 0, fmt, args...);
+    int computedLen = snprintf(nullptr, 0, fmt, args...);    
+    if(computedLen < 0) {
+        Error("Encoder error while logging | LogType: %d | fmt: '%s' | num args: %d\n", 
+              type, fmt, sizeof...(args)
+        );
+        return;
+    }
+
+    size_t logLen = computedLen;
+
     char* logStr = (logLen < kLogBufferBytes) ? logBuffer : new char[logLen+1];
     sprintf(logStr, fmt, args...);
 
@@ -70,6 +83,3 @@ inline void LogEx(LogType type, const char* fmt, ArgsT... args) {
     if(logStr != logBuffer) delete[] logStr;
 }
 
-#define Log(msg, fmt...)   LogEx(LOG_MSG, "MSG - " msg "\n",##fmt)
-#define Warn(msg, fmt...)  LogEx(LOG_WARN, "WARN - " msg "\n",##fmt)
-#define Error(msg, fmt...) LogEx(LOG_ERROR, "ERROR - " msg "\n",##fmt)

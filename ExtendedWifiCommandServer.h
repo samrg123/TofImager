@@ -42,7 +42,7 @@ class ExtendedWifiCommandServer: public WifiCommandServer {
             std::pair<const char*, WifiCommandServer::CommandCallback> pairs[kN];
 
             constexpr ExtendedCommandMap(const ExtendedCommand (&commands)[kN]): pairs{} {
-                for(int i = 0; i < kN; ++i) {
+                for(size_t i = 0; i < kN; ++i) {
                     pairs[i].first = commands[i].name;
                     pairs[i].second = commands[i].callback;
                 }

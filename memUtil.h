@@ -32,8 +32,8 @@ constexpr void FastCopy(void* dst, const void* src, T bytes) {
     const uint8* src8 = reinterpret_cast<const uint8*>(src);
 
     // TODO: Optimize this
-    // Note: It's worth having this loop here instead of explicity calling __builtin_memset.
-    //       gcc will optimize this loop into __builin_memset via tree optimizations, but 
+    // Note: It's worth having this loop here instead of explicitly calling __builtin_memset.
+    //       gcc will optimize this loop into __builtin_memset via tree optimizations, but 
     //       providing source code also allows compiler to optimize based on context without 
     //       always inserting branch to memset.  
 
@@ -70,7 +70,7 @@ constexpr void FastFill(T* start, T* end, const ValueT& value) {
 
     // TODO: Get this to working - experiment with int32 packing to get
     //       this faster than std::fill {Check via godbolt}
-    // Note: This may not be feasible until we get if conseval() in updated gcc
+    // Note: This may not be feasible until we get if consteval() in updated gcc
 
     // if constexpr(std::is_trivially_copyable<T>::value) {
 
@@ -162,7 +162,7 @@ inline constexpr void FastMemset(T* dst, uint8 val, uint32 bytes) {
     
     __builtin_memset(dst, val, bytes);
 
-    // // TODO: Benchmark this against stdlib bootrom memset
+    // // TODO: Benchmark this against stdlib boot rom memset
     
     // // align val to 32 bits;
     // uint32 val32 = (uint32(val)<<8) | val;
@@ -211,7 +211,7 @@ constexpr T ByteSwap(T val) {
     else if constexpr(kSize == 4)  return __builtin_bswap32(val);
     else if constexpr(kSize == 8)  return __builtin_bswap64(val);
     else if constexpr(kSize == 16) return __builtin_bswap128(val);   
-    else static_assert(kSize != kSize, "Unsupported Type");
+    else static_assert(false && kSize, "Unsupported Type");
 }
 
 template<typename T>

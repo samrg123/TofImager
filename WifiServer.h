@@ -12,8 +12,8 @@ class WifiServer: public WiFiServer {
 
     public:
 
-        static inline constexpr uint8 kMaxBacklog     = 4; //number of connections queued up
-        static inline constexpr uint8 kMaxConnections = 2; //number of connections managed by server
+        static inline constexpr uint8 kMaxBacklog     = 1; //number of connections queued up
+        static inline constexpr uint8 kMaxConnections = 1; //number of connections managed by server
 
         static inline constexpr uint32 kDisconnectedConnectionId = 0;
 
