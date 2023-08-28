@@ -24,7 +24,7 @@ class WifiCommandServer: public WifiServer {
 
     protected:
 
-        static inline bool IsWordSeperator(char c) {
+        static inline bool IsWordSeparator(char c) {
             switch(c) {
                 case ' ':
                 case '\t': return true;
@@ -36,7 +36,7 @@ class WifiCommandServer: public WifiServer {
         static std::vector<char*> ParseWords(char* cstr) {
 
             //skip leading whitespace
-            while(IsWordSeperator(*cstr)) {
+            while(IsWordSeparator(*cstr)) {
                 ++cstr;
             }
 
@@ -45,7 +45,7 @@ class WifiCommandServer: public WifiServer {
             std::vector<char*> words;
             for(char c; (c = *cstr); ++cstr) {
                 
-                if(IsWordSeperator(c)) {
+                if(IsWordSeparator(c)) {
                     
                     //add word
                     *cstr = '\0';
@@ -53,7 +53,7 @@ class WifiCommandServer: public WifiServer {
 
                     //fast forward to next word
                     ++cstr;
-                    while(IsWordSeperator(*cstr)) {
+                    while(IsWordSeparator(*cstr)) {
                         ++cstr;
                     }
                     wordStart = cstr;
@@ -120,7 +120,7 @@ class WifiCommandServer: public WifiServer {
                             if(!commandExecuted) {
                                 connection.client.printf("Invalid Command: '%s'\n", commandWords.front());
                             }
-                        } 
+                        }
                         
                         //start new command
                         writeOffset = readIndex+1;
