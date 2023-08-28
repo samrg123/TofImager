@@ -103,19 +103,24 @@ class WifiCommandServer: public WifiServer {
                     
                         buffer[readIndex - writeOffset] = '\0';
                         std::vector<char*> commandWords = ParseWords(buffer);
-                        
-                        bool commandExecuted = instance.ExecuteCommand(Command {
-                            .server = instance,
-                            .connection = connection,
-                            .name = commandWords.front(),
-                            .args = commandWords.data() + 1,
-                            .numArgs = commandWords.size() - 1
-                        });
-                        
-                        
-                        if(!commandExecuted) {
-                            connection.client.printf("Invalid Command: '%s'\n", commandWords.front());
-                        }
+
+                        // Note: we just ignore blank inputs
+                        size_t numCommandWords = commandWords.size();
+                        if(numCommandWords) {
+
+                            bool commandExecuted = instance.ExecuteCommand(Command {
+                                .server = instance,
+                                .connection = connection,
+                                .name = commandWords.front(),
+                                .args = commandWords.data() + 1,
+                                .numArgs = numCommandWords - 1
+                            });
+                            
+                            
+                            if(!commandExecuted) {
+                                connection.client.printf("Invalid Command: '%s'\n", commandWords.front());
+                            }
+                        } 
                         
                         //start new command
                         writeOffset = readIndex+1;
