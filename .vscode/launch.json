@@ -5,13 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: img2CppHeader",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/tools/img2CppHeader.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
 
+            "args": ["${workspaceFolder}/resources/woof.png"]
+        },
+
+        {
             //TODO: Right now Build and Run forces a recompile and upload which is SLOW
             //      make Build and Run preform a quick verify before commiting to all that
             //      and enable this prelauch task. For now just make sure the current
             //      firmware is on the to the ESP8266 before attaching debugger
             "preLaunchTask": "Build and Run",
-
             "name": "GDB - Debug ESP8266",
             "type": "cppdbg",
             "request": "launch",
@@ -19,61 +28,80 @@
             "cwd": "${workspaceFolder}/build",
             "MIMode": "gdb",
             "miDebuggerPath": "${env:LOCALAPPDATA}/Arduino15/packages/esp8266/tools/xtensa-lx106-elf-gcc/3.1.0-gcc10.3-e5f9fec/bin/xtensa-lx106-elf-gdb.exe",
-            
             // Presentation options in Run and Debug drop-down
             "presentation": {
                 "hidden": false,
                 "group": "ESP8266",
                 "order": 1
             },
-
             "logging": {
                 "exceptions": true,
                 "moduleLoad": true,
                 "programOutput": true,
-                
                 // Logs commands to GDB and responses
                 "engineLogging": false,
-                
                 // logs communication to mi server
                 "trace": false,
                 "traceResponse": false,
             },
-            
-            "hardwareBreakpoints": { "limit": 1 },
-
+            "hardwareBreakpoints": {
+                "limit": 1
+            },
             // Focus Debug Console when gdb starts
             "internalConsoleOptions": "openOnSessionStart",
-
             // Halt ESP8266 (send SIGINT AKA CTRL-C) when GDB connects
             "stopAtConnect": true,
-
-            "setupCommands": [ 
-
+            "setupCommands": [
                 // Configure GDB for ESP8266
-                { "text": "set remote hardware-breakpoint-limit 1" },
-                { "text": "set remote hardware-watchpoint-limit 1" },
-                { "text": "set remote interrupt-on-connect on" },
-                { "text": "set remote kill-packet off" },
-                { "text": "set remote symbol-lookup-packet off" },
-                { "text": "set remote verbose-resume-packet off" },
-                { "text": "mem 0x20000000 0x3fefffff ro cache" },
-                { "text": "mem 0x3ff00000 0x3fffffff rw" },
-                { "text": "mem 0x40000000 0x400fffff ro cache" },
-                { "text": "mem 0x40100000 0x4013ffff rw cache" },
-                { "text": "mem 0x40140000 0x5fffffff ro cache" },
-                { "text": "mem 0x60000000 0x60001fff rw" },
-                
-                { "text": "-enable-pretty-printing" },
-
+                {
+                    "text": "set remote hardware-breakpoint-limit 1"
+                },
+                {
+                    "text": "set remote hardware-watchpoint-limit 1"
+                },
+                {
+                    "text": "set remote interrupt-on-connect on"
+                },
+                {
+                    "text": "set remote kill-packet off"
+                },
+                {
+                    "text": "set remote symbol-lookup-packet off"
+                },
+                {
+                    "text": "set remote verbose-resume-packet off"
+                },
+                {
+                    "text": "mem 0x20000000 0x3fefffff ro cache"
+                },
+                {
+                    "text": "mem 0x3ff00000 0x3fffffff rw"
+                },
+                {
+                    "text": "mem 0x40000000 0x400fffff ro cache"
+                },
+                {
+                    "text": "mem 0x40100000 0x4013ffff rw cache"
+                },
+                {
+                    "text": "mem 0x40140000 0x5fffffff ro cache"
+                },
+                {
+                    "text": "mem 0x60000000 0x60001fff rw"
+                },
+                {
+                    "text": "-enable-pretty-printing"
+                },
                 // Connect to ESP8266
                 // TODO: FIGURE OUT WHERE THIS GETS SET!
                 // Note: We know gdb uses uart 0 and that its baud rate can be changed with Serial.begin()
-                { "text": "set serial baud 115200" },
-                { "text": "target remote \\\\.\\COM9" },
-
+                {
+                    "text": "set serial baud 115200"
+                },
+                {
+                    "text": "target remote \\\\.\\COM9"
+                },
             ]
         }
-
     ]
 }

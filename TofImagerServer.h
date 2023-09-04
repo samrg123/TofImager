@@ -1,8 +1,12 @@
 #pragma once
 
+#include "Wifi.h"
 #include "ExtendedWifiCommandServer.h"
 
 #include "Banner.h"
+
+#include "resources/woof.h"
+#include "resources/potato.h"
 
 class TofImager;
 
@@ -25,8 +29,24 @@ struct TofImagerServer: ExtendedWifiCommandServer {
     //       header and allow us to print extended help when a command is specified with invalid args
     static inline void HelpCallback(Command command);
 
-    // TODO: Add help Command and stream 'type' 'on/off' command 
-    // TODO: add Wifi::OnDisconnect(server& connection&) callback. Needed to free resources when streaming to wifi client   
+    // TODO: clean this up, this is just a hack for the easter eggs right now!
+    template<size_t kHeight, size_t kWidth>
+    static inline void showBmp(const uint16(&bmp)[kHeight][kWidth]) {
+      
+        if(!gLogDisplay) return;
+
+        gLogDisplay->backBuffer.drawRGBBitmap(
+            0, 0,
+            bmp[0],
+            kWidth, kHeight
+        );
+
+        gLogDisplay->Draw();
+    
+        delay(3000);
+    }
+
+    // TODO: Add stream 'type' 'on/off' command 
     static inline constexpr ExtendedCommand kExtendedCommands[] = {
 
         ExtendedCommand {
@@ -58,14 +78,17 @@ struct TofImagerServer: ExtendedWifiCommandServer {
             .summary = "A royal how do you do.",
             .detailedHelp = "In loving memory of Shay 2008-2021.",
             .callback = [](Command command) {
-                
-                // TofImager& tofImager = Server(command).tofImager;
-                // tofImager.sensorStream.Remove(SensorStream::UpdateDisplay);
-                // Display& display = wifly.display;
-                // display.backBuffer.drawRGBBitmap(0, 0, Woof::kBuffer, Woof::kWidth, Woof::kHeight);
-                // display.Draw();
-
                 command.connection.client.println("The Queen says Woof");
+                showBmp(kWoof);          
+            }
+        },
+
+        ExtendedCommand {
+            .name = "potato",
+            .summary = "A lazy how do you do.",
+            .callback = [](Command command) {
+                command.connection.client.println("The Potato says Potate");
+                showBmp(kPotato);
             }
         },
     };        
