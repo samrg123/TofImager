@@ -17,6 +17,8 @@
 // Looks like IRAM_ATTR breaks the assembler so we just define our own IRAM_FUNC macro that does what its supposed to do
 #define IRAM_FUNC __attribute__((section( ".iram.text." __FILE__ "." DEFER_STRINGIZE(__LINE__) "." DEFER_STRINGIZE(__COUNTER__) )))
 
+#define FLASH_LITERAL __attribute__((section( ".literal." __FILE__ "." DEFER_STRINGIZE(__LINE__) "." DEFER_STRINGIZE(__COUNTER__) )))
+
 #define USED __attribute__((used))
 #define SECTION(x) __attribute__((section(x)))
 
